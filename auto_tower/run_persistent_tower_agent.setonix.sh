@@ -10,6 +10,9 @@ cd "${SERVICE_TOWER_DIR}"
 set -euo pipefail
 
 WFHOST="setonix-workflow.pawsey.org.au"
-ssh ${WFHOST} screen -dmS tower ${SCRIPT_DIR}/run_tower_agent.sh
 
-echo "Tower agent is running within the screen session 'tower' on the workflow node '${WFHOST}'."
+# Get hostname
+WFHOSTREAL=$(ssh ${WFHOST} hostname | grep -P "^setonix-\d+$" | tail -n 1)
+ssh ${WFHOSTREAL} screen -dmS tower ${SCRIPT_DIR}/run_tower_agent.sh
+
+echo "Tower agent is running within the screen session 'tower' on the workflow node '${WFHOSTREAL}'."
