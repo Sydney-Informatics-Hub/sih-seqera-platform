@@ -1,0 +1,7 @@
+# Automatic tower agent setup
+
+These scripts allow you to set up a single Seqera tower agent that can be shared by multiple users of a Seqera workspace.
+
+Running the script `run_persistent_tower_agent_pbs.sh` will first attempt to create a persistent session called `nf-tower`, moving on if it already exists. Then, the script will connect to the persistent session, start a screen session called `tower`, and run the `run_tower_agent_pbs.sh` script within it. Once running, the screen session will detach and the connection to the persistent session will disconnect as well.
+
+The script `run_tower_agent_pbs.sh` looks for the file `.tower/connection_id` within this directory, which should contain the connection ID for the shared Seqera credentials (see the [Seqera documentation](https://docs.seqera.io/platform-enterprise/credentials/agent_credentials) for more information). The script will also look for the file `$HOME/.tower/token`, which should contain your personal Seqera user token. The script will download the tw-agent executable if it hasn't already been downloaded, then run it using your user token and the connection ID. The script additionally implements a file lock to prevent multiple users from simultaneously creating tower agents.
