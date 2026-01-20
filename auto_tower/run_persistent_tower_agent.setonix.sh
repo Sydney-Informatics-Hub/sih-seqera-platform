@@ -13,6 +13,7 @@ WFHOST="setonix-workflow.pawsey.org.au"
 
 # Get hostname
 WFHOSTREAL=$(ssh ${WFHOST} hostname | grep -P "^setonix-\d+$" | tail -n 1)
+sleep 0.5 # Avoids ssh connection refused
 ssh ${WFHOSTREAL} screen -dmS tower ${SCRIPT_DIR}/run_tower_agent.sh
 
 echo "Tower agent is running within the screen session 'tower' on the workflow node '${WFHOSTREAL}'."
