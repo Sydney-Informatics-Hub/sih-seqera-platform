@@ -6,6 +6,7 @@
 2. Create shared tower agent credentials
 3. Initialise the tower agent
 4. Run the custom SIH `auto_tower` agent
+5. Set up a compute environment
 
 ## How to configure your Seqera Personal Access Token for Gadi
 
@@ -132,8 +133,42 @@ You have succesfully prepared a Gadi project to run the tower agent and connect 
 Tower agent is running within the screen session 'tower' on the persistent session 'nf-tower.<user>.<project>.ps.gadi.nci.org.au'.
 ```
 
-TODO:
-- connect to persistent-session, open screen
+3. Connect to the persistent session by running `ssh nf-tower.<user>.<project>.ps.gadi.org.au`. Ensure `<user>` and `<project>` are replaced with the correct values.
+4. Connect to the screen session with `screen -r`. A similar output should be displayed:
+
+```
+15:57:12.720 INFO - Sending heartbeat 
+15:57:13.630 INFO - Received heartbeat
+15:57:58.151 INFO - Sending heartbeat
+15:57:58.406 INFO - Received heartbeat
+```
+
+5. To detach from the screen session and keep the tower running, press `ctrl+a` `ctrl+d`.
+
+You have successfully started the automated tower agent on Gadi!
+
+**References:**
+- https://devhints.io/screen
+
+## How to set up a compute environment
+
+Setting the compute environment is configured on Seqera Platform and only needs to be done once per Seqera workspace, and Gadi project.
+
+Note: Currently, Seqera Platform does not support running Nextflow head jobs locally, or on the head node (e.g. persistent-sessions). The Gadi `workflow` queue should be used in the meantime to submit long-running, low-resource pipeline jobs.
+
+1. On https://seqera.services.biocommons.org.au, navigate to the **Compute Environments** tab.
+2. Check if a compute environment has been configured yet for the Gadi project. For example, `Gadi-er01`. If it exists, skip the remainder of the sections.
+3. To add a new compute environment, select **Add compute environment**.
+4. Provide a meaningful which includes the system you are running it on, and the project code e.g. `Gadi-er01`.
+5. For the **Platform**, select **Altair PBS Pro** to reflect the scheduler for Gadi.
+6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
+7. Enter `$TW_AGENT_WORK` for the **Work directory** and **Launch directory**.
+8. Enter `workflow` for the **Head queue name**. This is the temporary workaround until running head jobs in the same location as the agent is supported.
+9. Leave the **Compute queue name** blank.
+10. Under **Staging options -> Pre-run script**, enter `module load nextflow/26.04.6 singularity`.
+
+
+
 
 ## How to add a new pipeline
 
