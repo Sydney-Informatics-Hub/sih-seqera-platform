@@ -7,6 +7,8 @@
 3. Initialise the tower agent
 4. Run the custom SIH `auto_tower` agent
 5. Set up a compute environment
+6. Add a new pipeline to Seqera Platform
+7. Run a pipeline
 
 ## How to configure your Seqera Personal Access Token for Gadi
 
@@ -127,12 +129,13 @@ You have succesfully prepared a Gadi project to run the tower agent and connect 
 
 **Steps:**
 1. Navigate to the `sih-seqera-platform/auto-tower` repo in your project `/g/data`. For example `cd /g/data/er01/sih-seqera-platform/auto-tower`.
-2. Start the tower agent in a persistent session by running `run_persistent_tower_agent.gadi.sh`. You should see the following message:
+2. Start the tower agent in a persistent session by running `./run_persistent_tower_agent.gadi.sh`. You should see the following message:
 
 ```console
 Tower agent is running within the screen session 'tower' on the persistent session 'nf-tower.<user>.<project>.ps.gadi.nci.org.au'.
 ```
 
+3. Optionally, you can add `/g/data/er01/sih-seqera-platform/auto-tower` to your `$PATH` to avoid changing directories.
 3. Connect to the persistent session by running `ssh nf-tower.<user>.<project>.ps.gadi.org.au`. Ensure `<user>` and `<project>` are replaced with the correct values.
 4. Connect to the screen session with `screen -r`. A similar output should be displayed:
 
@@ -161,7 +164,7 @@ Note: Currently, Seqera Platform does not support running Nextflow head jobs loc
 3. To add a new compute environment, select **Add compute environment**.
 4. Provide a meaningful which includes the system you are running it on, and the project code e.g. `Gadi-er01`.
 5. For the **Platform**, select **Altair PBS Pro** to reflect the scheduler for Gadi.
-  6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
+6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
 7. Enter `$TW_AGENT_WORK` for the **Work directory** and **Launch directory**.
 8. Leave the **Head queue name** and **Compute queue name** blank.
 10. Under **Staging options -> Pre-run script**, enter `module load nextflow/26.04.6 singularity`.
@@ -188,4 +191,7 @@ You have successfully added a new pipeline to the Seqera Platform workspace!
 
 ## How to run a pipeline
 
-TODO
+1. Ensure the tower agent is running on Gadi. See "How to start the automated tower agent `auto_tower` on Gadi".
+1. On https://seqera.services.biocommons.org.au, navigate to the **Launchpad** tab.
+2. For the pipeline to run, select **Launch**.
+3. Input all the required options.
