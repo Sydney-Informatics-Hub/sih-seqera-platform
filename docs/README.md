@@ -161,18 +161,30 @@ Note: Currently, Seqera Platform does not support running Nextflow head jobs loc
 3. To add a new compute environment, select **Add compute environment**.
 4. Provide a meaningful which includes the system you are running it on, and the project code e.g. `Gadi-er01`.
 5. For the **Platform**, select **Altair PBS Pro** to reflect the scheduler for Gadi.
-6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
+  6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
 7. Enter `$TW_AGENT_WORK` for the **Work directory** and **Launch directory**.
-8. Enter `workflow` for the **Head queue name**. This is the temporary workaround until running head jobs in the same location as the agent is supported.
-9. Leave the **Compute queue name** blank.
+8. Leave the **Head queue name** and **Compute queue name** blank.
 10. Under **Staging options -> Pre-run script**, enter `module load nextflow/26.04.6 singularity`.
+11. Under **Advanced options**, add the following details:
+  - **Nextflow queue size**: 300
+  - **Head job submit options**: `-lwalltime=96:00:00,ncpus=1,mem=8G,storage=scratch/<project>+gdata/<project>,wd -P <project> -q workflow`. Ensure you update the options to suit the project storage and resources required.
+12. Select **Add**.
 
-
-
+You have successfully set up a compute environment for Gadi!
 
 ## How to add a new pipeline
 
-TODO
+1. On https://seqera.services.biocommons.org.au, navigate to the **Launchpad** tab.
+2. Select **Add pipeline**.
+3. Enter the **Name** of the pipeline.
+4. Select the **Compute environment** for the correct infrastructure and code. e.g. `Gadi-er01`.
+5. In **Pipeline to launch**, copy and paste the link to the GitHub repository for the pipeline. For example, `https://github.com/Sydney-Informatics-Hub/Parabricks-Genomics-nf`.
+6. If you need to run a version of the pipeline that is not committed to the `main` branch, specify the correct branch or version under the **Revision number** dropdown.
+7. Leave the **Work directory** default of `$TW_AGENT_WORK`
+8. In **Config profiles**, select the profiles required to run the pipeline. e.g. `gadi`.
+9. Select **Add**.
+
+You have successfully added a new pipeline to the Seqera Platform workspace!
 
 ## How to run a pipeline
 
