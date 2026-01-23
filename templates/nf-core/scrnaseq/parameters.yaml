@@ -1,0 +1,5 @@
+input: samplesheet.csv
+aligner: cellranger  # alts: kallisto, star, simpleaf
+cellranger_index: /path/to/GRCh38-2020-A  # only for cellranger aligner
+# barcode_whitelist: /path/to/whitelist  # for non-cellranger aligners
+protocol: auto  # auto for cellranger only; 'auto' or any protocol string to be passed to the aligner; required for non-cellranger aligners
