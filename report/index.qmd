@@ -1,0 +1,91 @@
+---
+title: "SIH Bioinformatics Analysis Report"
+format: html
+params:
+  contact_name: null
+  data_type: null
+  analysis_type: null
+  service_tier: null
+---
+
+```{r}
+#| label: check-params
+#| echo: false
+#| output: true
+#| message: false
+#| warning: false
+for (p in params) {
+    stopifnot(!is.null(p))
+}
+
+analysis_type_lookup <- list(
+    scrnaseq.standard = "RNAseq analysis (standard tier): genome alignment and cell counting",
+    scrnaseq.advanced = "RNAseq analysis (advanced tier): genome alignment, cell counting, quality control, filtering, cell annotation, differential expression and functional enrichment analysis",
+    scrnaseq.premium = "RNAseq analysis (premium tier): full custom single-cell RNAseq analysis",
+    germline.standard = "Germline variant calling (standard tier): genome alignment, germline variant calling and annotation",
+    somatic.standard = "Somatic variant calling (standard tier): genome alignment, somatic variant calling and annotation"
+)
+
+analysis_type_key <- paste(params$analysis_type, params$service_tier, sep = ".")
+analysis_type_str <- analysis_type_lookup[[analysis_type_key]]
+stopifnot(!is.null(analysis_type_str))
+```
+
+*TODO:* Write a delivery message.
+
+Dear `{r} params$contact_name`,
+
+Thank you for using the Sydney Informatics Hub's bioinformatics service.
+
+We are pleased to let you know that the analysis of your data has been completed.
+
+Please find below a summary of your data, the analyses performed, links to access your data, and explanations of the analysis steps performed.
+
+## Summary of input data
+
+### TODO:
+
+- Reiterate the data type (WGS/WES, bulk/single-cell RNAseq, etc.).
+- Provide a summary table of the input data.
+    - Use samplesheets and parameters and join into single summary table.
+        - Curate which columns to show for brevity.
+
+Your data type was: `{r} params$data_type`.
+
+## Summary of analysis
+
+### TODO:
+
+- Reiterate the type of analysis performed (genomic/somatic variant detection, bulk/single-cell RNAseq analysis, etc.).
+- Reiterate the analysis tier (standard/advanced/premium) and its inclusions.
+- State the pipelines that we ran, in order.
+    - Look into automating a flow chart of the pipelines ran (Mermaid?).
+
+You requested the following bioinformatics analysis package: `{r} analysis_type_str`.
+
+## Summary of outputs
+
+### TODO:
+
+- Provide a summary of the output data.
+    - Use a table if appropriate.
+    - Use a separate section/table for each pipeline. Ensure they are in the order of how they were run.
+
+## Data access
+
+### TODO:
+
+- Provide links and/or instructions to access the output data.
+    - This will be done via Globus. Look into how this will work and can be implemented.
+    - Optionally, also provide direct links to download the data, if appropriate.
+
+## Analysis details
+
+### TODO:
+
+- For each pipeline that was run, list:
+    - What the pipeline does.
+    - What the pipeline inputs are and what they mean.
+    - What parameters the pipeline takes and how they affect the analysis.
+    - What the pipeline ouptuts are and what they mean.
+- Ensure this section is thorough but also user-friendly. Keep jargon to a minimum and focus on providing rationales for each step.

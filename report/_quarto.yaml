@@ -1,0 +1,16 @@
+project:
+  output-dir: report
+
+format:
+  html:
+    theme:
+      light:
+      - "flatly"
+      - "styles.scss"
+    toc: true
+    toc-location: "left"
+    toc-depth: 2
+    code-link: true
+    code-fold: true
+    code-line-numbers: true
+    embed-resources: true
