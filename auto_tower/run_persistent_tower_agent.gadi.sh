@@ -24,6 +24,7 @@ set -euo pipefail
 }
 
 PSHOST="nf-tower.${USER}.${PROJECT}.ps.gadi.nci.org.au"
+sleep 0.5 # Avoids ssh connection refused
 ssh ${PSHOST} screen -dmS tower ${SCRIPT_DIR}/run_tower_agent.sh
 
 echo "Tower agent is running within the screen session 'tower' on the persistent session '${PSHOST}'."
