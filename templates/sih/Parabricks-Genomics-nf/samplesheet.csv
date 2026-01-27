@@ -1,0 +1,3 @@
+sample,fq1,fq2,platform,library,center
+Sample_X,/path/to/data/Sample_X_L001_R1.fastq.gz,/path/to/data/Sample_X_L001_R2.fastq.gz,illumina,Library_1,"Sequencing Center"
+Sample_Y,/path/to/data/Sample_Y_L001_R1.fastq.gz,/path/to/data/Sample_Y_L001_R2.fastq.gz,illumina,Library_2,"Sequencing Center"

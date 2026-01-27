@@ -1,0 +1,6 @@
+input: samplesheet.csv
+ref: /path/to/reference.fasta
+download_vep_cache: true  # Optional
+vep_species: homo_sapiens  # Required if download_vep_cache is true
+vep_assembly: GRCh38  # Required if download_vep_cache is true
+gadi_account: ab01  # Required if running on Gadi
