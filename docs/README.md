@@ -49,13 +49,13 @@ The following are steps to create a new shared credential, if required.
 **Steps:**
 1. Open `https://seqera.services.biocommons.org.au/` on a browser and sign in with your USYD email.
 2. Create a new tower agent credentials by selecting **Add workspace credentials**.
-5. Provide a unique **Name**.
-6. For the **Provider**, select **Tower Agent**.
-7. Enable **Shared agent**.
+3. Provide a unique **Name**.
+4. For the **Provider**, select **Tower Agent**.
+5. Enable **Shared agent**.
 
 At this point, the tower agent needs to be configured on Gadi. The following steps document this process, and the credentials creation on Seqera Platforms will be finalised once the tower agent is running on Gadi.
 
-8. Before adding the credential you will need to run the agent on Gadi. Check that the agent has been configured for the Gadi project by running the following:
+6. Before adding the credential you will need to run the agent on Gadi. Check that the agent has been configured for the Gadi project by running the following:
 
 ```bash
 stat /g/data/<project>/sih-seqera-platform/
@@ -77,7 +77,7 @@ Change: 2026-01-20 15:16:01.000000000 +1100
 
 If so, check if the tower agent is already running.
 
-9. Check the tower agent is running by executing the following command using `flock` and replace the `<project>`.
+7. Check the tower agent is running by executing the following command using `flock` and replace the `<project>`.
 
 ```bash
 flock -n /g/data/<project>/sih-seqera-platform/auto_tower/.tower/.lockfile echo "No tower agent is running."
@@ -86,7 +86,7 @@ flock -n /g/data/<project>/sih-seqera-platform/auto_tower/.tower/.lockfile echo 
 - If that command prints nothing, another agent is running and you'll need to get the owner to stop it or set up your agent in a different directory.
 - Alternatively, if the tower agent was previously set up but is not running, **Skip to Step 14**.
 
-10. If the following message is displayed, the directory has not been set up and you should proceed with the remaining set up instructions:
+8. If the following message is displayed, the directory has not been set up and you should proceed with the remaining set up instructions:
 
 ```console
 stat: cannot statx '/g/data/er01/sih-seqera-platform': No such file or directory
@@ -150,8 +150,8 @@ Tower agent is running within the screen session 'tower' on the persistent sessi
 ```
 
 3. Optionally, you can add `/g/data/er01/sih-seqera-platform/auto-tower` to your `$PATH` to avoid changing directories.
-3. Connect to the persistent session by running `ssh nf-tower.<user>.<project>.ps.gadi.org.au`. Ensure `<user>` and `<project>` are replaced with the correct values.
-4. Connect to the screen session with `screen -r`. A similar output should be displayed:
+4. Connect to the persistent session by running `ssh nf-tower.<user>.<project>.ps.gadi.org.au`. Ensure `<user>` and `<project>` are replaced with the correct values.
+5. Connect to the screen session with `screen -r`. A similar output should be displayed:
 
 ```
 15:57:12.720 INFO - Sending heartbeat 
@@ -160,7 +160,7 @@ Tower agent is running within the screen session 'tower' on the persistent sessi
 15:57:58.406 INFO - Received heartbeat
 ```
 
-5. To detach from the screen session and keep the tower running, press `ctrl+a` `ctrl+d`.
+6. To detach from the screen session and keep the tower running, press `ctrl+a` `ctrl+d`.
 
 You have successfully started the automated tower agent on Gadi!
 
@@ -187,7 +187,7 @@ This sections steps through how to add one.
 12. Optionally, change the repository access.
 13. Copy the personal access token.
 14. Navigate back to Seqera Platform and paste into **Access token**.
-14. Select **Add** to finalise.
+15. Select **Add** to finalise.
 
 You have successfully configured your GitHub credentials!
 
@@ -205,11 +205,11 @@ Note: Currently, Seqera Platform does not support running Nextflow head jobs loc
 6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
 7. Enter `$TW_AGENT_WORK` for the **Work directory** and **Launch directory**.
 8. Leave the **Head queue name** and **Compute queue name** blank.
-10. Under **Staging options -> Pre-run script**, enter `module load nextflow/26.04.6 singularity`.
-11. Under **Advanced options**, add the following details:
+9. Under **Staging options -> Pre-run script**, enter `module load nextflow/26.04.6 singularity`.
+10. Under **Advanced options**, add the following details:
   - **Nextflow queue size**: 300
   - **Head job submit options**: `-lwalltime=96:00:00,ncpus=1,mem=8G,storage=scratch/<project>+gdata/<project>,wd -P <project> -q workflow`. Ensure you update the options to suit the project storage and resources required.
-12. Select **Add**.
+11. Select **Add**.
 
 You have successfully set up a compute environment for Gadi!
 
@@ -230,6 +230,6 @@ You have successfully added a new pipeline to the Seqera Platform workspace!
 ## How to run a pipeline
 
 1. Ensure the tower agent is running on Gadi. See "How to start the automated tower agent `auto_tower` on Gadi".
-1. On https://seqera.services.biocommons.org.au, navigate to the **Launchpad** tab.
-2. For the pipeline to run, select **Launch**.
-3. Input all the required options.
+2. On https://seqera.services.biocommons.org.au, navigate to the **Launchpad** tab.
+3. For the pipeline to run, select **Launch**.
+4. Input all the required options.
