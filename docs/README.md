@@ -6,9 +6,10 @@
 2. Create shared tower agent credentials
 3. Initialise the tower agent
 4. Run the custom SIH `auto_tower` agent
-5. Set up a compute environment
-6. Add a new pipeline to Seqera Platform
-7. Run a pipeline
+5. Add GitHub credentials
+6. Set up a compute environment
+7. Add a new pipeline to Seqera Platform
+8. Run a pipeline
 
 ## How to configure your Seqera Personal Access Token for Gadi
 
@@ -34,36 +35,34 @@ You have successfully configured your personal access token. Next, see "How to p
 
 **Prerequisites:**
 - [ ] An account on Seqera Platforms in the BioCommons workspace
+- [ ] Access to a Gadi project 
+- [ ] Personal access token configured 
 
-This needs to be done once per Seqera Platform workspace.
+This needs to be done once per Seqera Platform workspace. A shared account requires a designated account on Gadi to run the tower agent. 
+
+Other users cannot start or run the tower agent, but can launch workflows whilst the agent is active.
+
+Ideally a service account sets up the shared credential, that can be shared amongst workspace users. 
+
+The following are steps to create a new shared credential, if required.
 
 **Steps:**
 1. Open `https://seqera.services.biocommons.org.au/` on a browser and sign in with your USYD email.
-2. Go to the **Credentials** tab and check for shared credentials (e.g. **`NCI-shared`**). If it exists, skip the rest of this section.
-4. If it does not exist, create new tower agent credentials by selecting **Add workspace credentials**.
+2. Create a new tower agent credentials by selecting **Add workspace credentials**.
 5. Provide a unique **Name**.
 6. For the **Provider**, select **Tower Agent**.
 7. Enable **Shared agent**.
-7. Select **Add**.
 
-**References**
-- https://docs.seqera.io/platform-enterprise/credentials/agent_credentials
-- https://australianbiocommons.github.io/nextflow-seqera/user-guide/compute-env.html#configuring-hpc-on-the-australian-nextflow-seqera-service 
+At this point, the tower agent needs to be configured on Gadi. The following steps document this process, and the credentials creation on Seqera Platforms will be finalised once the tower agent is running on Gadi.
 
-## How to prepare the automated tower agent on Gadi
-
-**Prerequisites:**
-- [ ] Access to a Gadi project 
-- [ ] Personal access token configured 
-- [ ] Seqera Tower Agent credentials configured 
-
-The tower agent needs to be setup once per Gadi project. First, check that the agent exists in your project by running:
+8. Before adding the credential you will need to run the agent on Gadi. Check that the agent has been configured for the Gadi project by running the following:
 
 ```bash
 stat /g/data/<project>/sih-seqera-platform/
 ```
 
-If a similar output is displayed, **the tower agent has already been configured for this project - skip the remainder of this section**:
+If a similar output is displayed, **the tower agent may have already been configured by another user in the project**. 
+
 ```console
 ❯ stat /g/data/er01/sih-seqera-platform/
   File: /g/data/er01/sih-seqera-platform/
@@ -76,27 +75,37 @@ Change: 2026-01-20 15:16:01.000000000 +1100
  Birth: -
 ```
 
-If a similar output is displayed, **the tower agent has not been configured and the remainder of the steps in this section must be run**:
+If so, check if the tower agent is already running.
 
-```console
-stat: cannot statx '/g/data/er01/blah': No such file or directory
+9. Check the tower agent is running by executing the following command using `flock` and replace the `<project>`.
+
+```bash
+flock -n /g/data/<project>/sih-seqera-platform/auto_tower/.tower/.lockfile echo "No tower agent is running."
 ```
 
-**Steps:**
-1. To setup the tower agent, retrieve a copy of the `sih-seqera-platform` repository and navigate to the `auto_tower` folder. For example:
+- If that command prints nothing, another agent is running and you'll need to get the owner to stop it or set up your agent in a different directory.
+- Alternatively, if the tower agent was previously set up but is not running, **Skip to Step 14**.
+
+10. If the following message is displayed, the directory has not been set up and you should proceed with the remaining set up instructions:
+
+```console
+stat: cannot statx '/g/data/er01/sih-seqera-platform': No such file or directory
+```
+
+9. To setup the tower agent, retrieve a copy of the `sih-seqera-platform` repository and navigate to the `auto_tower` folder. For example:
 
 ```bash
 cd /g/data/er01 && \
 `git clone git@github.com:Sydney-Informatics-Hub/sih-seqera-platform.git`
 ```
 
-2. Allow other users in the project to run the agent by updating the file permissions with `chmod 774 -R sih-seqera-platform/`. 
-3. Navigate to the `auto_tower` directory by running `cd sih-seqera-platform/auto_tower`.
-4. Create the tower directory by running `mkdir -p .tower`
-5. Create the file `.tower/connection_id` and open for editing.
-6. Retrieve the tower agent Connection ID from Seqera Platform by navigating to **Credentials -> Workspace credentials**. Locate the correct shared workspace credentials (e.g. `NCI-shared-2`) and copy the **Connection ID** to your clipboard.
-7. Return to the terminal (Gadi) and paste the Connection ID in `.tower/connection_id`. Save and exit the file.
-8. Run the tower agent and connect to Seqera Platforms by running `./run_tower_agent.sh`. You should see a similar output as:
+10. Allow other users in the project to run the agent by updating the file permissions with `chmod 774 -R sih-seqera-platform/`. 
+11. Navigate to the `auto_tower` directory by running `cd sih-seqera-platform/auto_tower`.
+12. Create the tower directory by running `mkdir -p .tower`
+13. Create the file `.tower/connection_id` and open for editing.
+14. Retrieve the tower agent **Connection ID** from Seqera Platform by copying the ID in the credentials interface.
+15. Return to the terminal (Gadi) and paste the Connection ID in `.tower/connection_id`. Save and exit the file.
+16. Run the tower agent and connect to Seqera Platforms by running `./run_tower_agent.sh`. You should see a similar output as:
 
 ```
 Creating work directory...
@@ -115,9 +124,14 @@ Downloading tw-agent...
 17:36:39.200 INFO - Connection to Tower established
 ```
 
-9. Terminate the process.
+17. Back in the Seqera interface, click `Add` to save your credential.
+18. Optionally, terminate the process running the tower agent.
 
 You have succesfully prepared a Gadi project to run the tower agent and connect to Seqera Platforms!
+
+**References**
+- https://docs.seqera.io/platform-enterprise/credentials/agent_credentials
+- https://australianbiocommons.github.io/nextflow-seqera/user-guide/compute-env.html#configuring-hpc-on-the-australian-nextflow-seqera-service 
 
 ## How to start the automated tower agent `auto_tower` on Gadi
 
@@ -125,7 +139,7 @@ You have succesfully prepared a Gadi project to run the tower agent and connect 
 
 - [ ] Personal access token configured
 - [ ] `sih-seqera-platform` repo available on `/g/data<project>`, or;
-- [ ] "How to prepare your tower agent on Gadi" completed
+- [ ] "How to configure shared Tower Agent credentials" completed
 
 **Steps:**
 1. Navigate to the `sih-seqera-platform/auto-tower` repo in your project `/g/data`. For example `cd /g/data/er01/sih-seqera-platform/auto-tower`.
@@ -153,11 +167,35 @@ You have successfully started the automated tower agent on Gadi!
 **References:**
 - https://devhints.io/screen
 
+## How to configure GitHub credentials
+
+GitHub credentials should be added to the workspace to avoid hitting API limit errors. Only one GitHub credential needs to be added per workspace. 
+
+This sections steps through how to add one.
+
+1. On Seqera Platform, navigate to the workspace **Credentials** tab.
+2. Select **Add workspace credentials**.
+3. Provide a descriptive name, ideally that informs the workspace and provided. For example `sih-github`.
+4. In the **Provider** drop down, **select GitHub**.
+5. Enter your GitHub username in **Username**.
+6. Create a GitHub personal access token by navigating to [https://github.com/settings/apps](https://github.com/settings/apps).
+7. Select the **Personal access tokens** dropdown, select **Fine-grained tokens**.
+8. Select **Generate a new token**.
+9. In **Token name** denote the workspace group and the platform e.g. `sih-seqera`.
+10. Under **Resource owner**, select the GitHub organisation e.g. `Sydney-Informatics-Hub`.
+11. Optionally, change the expiration for the token.
+12. Optionally, change the repository access.
+13. Copy the personal access token.
+14. Navigate back to Seqera Platform and paste into **Access token**.
+14. Select **Add** to finalise.
+
+You have successfully configured your GitHub credentials!
+
 ## How to set up a compute environment
 
 Setting the compute environment is configured on Seqera Platform and only needs to be done once per Seqera workspace, and Gadi project.
 
-Note: Currently, Seqera Platform does not support running Nextflow head jobs locally, or on the head node (e.g. persistent-sessions). The Gadi `workflow` queue should be used in the meantime to submit long-running, low-resource pipeline jobs.
+Note: Currently, Seqera Platform does not support running Nextflow head jobs locally, or on the head node (e.g. persistent-sessions). The Gadi `copyq` queue will be used in the meantime to submit Nextflow head jobs that can be completed within 10 hours.
 
 1. On https://seqera.services.biocommons.org.au, navigate to the **Compute Environments** tab.
 2. Check if a compute environment has been configured yet for the Gadi project. For example, `Gadi-er01`. If it exists, skip the remainder of the sections.
