@@ -209,7 +209,7 @@ Note: Currently, Seqera Platform does not support running Nextflow head jobs loc
 10. Under **Advanced options**, add the following details:
   - **Nextflow queue size**: 300
   - **Head job submit options**: `-P <project> -q copyq -lwalltime=96:00:00,ncpus=1,mem=8G,storage=scratch/<project>+gdata/<project>,wd `. Ensure you update the options to suit the project storage and resources required.
-11. Keep the `Apply head job submit options to compute jobs` off, as this wil be handles by `Nextflow config`
+11. Keep the option `Apply head job submit options to compute jobs` off, as this will be handled by `Nextflow config`
 12. Select **Add**.
 
 You have successfully set up a compute environment for Gadi!
