@@ -205,10 +205,10 @@ Note: Currently, Seqera Platform does not support running Nextflow head jobs loc
 6. Select the **Credentials** that was either identified, or newly created, in "How to configure shared Tower Agent Credentials". This should be a shared credential so other users in the project can re-use it. e.g. `NCI-shared`.
 7. Enter `$TW_AGENT_WORK` for the **Work directory** and **Launch directory**.
 8. Leave the **Head queue name** and **Compute queue name** blank.
-9. Under **Staging options -> Pre-run script**, enter `module load nextflow/26.04.6 singularity`.
+9. Under **Staging options -> Pre-run script**, enter `module load nextflow/25.04.6 singularity`.
 10. Under **Advanced options**, add the following details:
   - **Nextflow queue size**: 300
-  - **Head job submit options**: `-P <project> -q copyq -lwalltime=96:00:00,ncpus=1,mem=8G,storage=scratch/<project>+gdata/<project>,wd `. Ensure you update the options to suit the project storage and resources required.
+  - **Head job submit options**: `-P <project> -q copyq -lwalltime=10:00:00,ncpus=1,mem=8G,storage=scratch/<project>+gdata/<project>,wd `. Ensure you update the options to suit the project storage and resources required.
 11. Keep the option `Apply head job submit options to compute jobs` off, as this will be handled by `Nextflow config`
 12. Select **Add**.
 
