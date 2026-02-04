@@ -2,22 +2,37 @@
 title: "SIH Bioinformatics Analysis Report"
 format: html
 params:
-  contact_name: null
-  data_type: null
-  analysis_type: null
-  service_tier: null
+    contact_name: null
+    data_type: null
+    analysis_type: null
+    service_tier: null
+    pipelines: null
 ---
+
+```{r}
+#| label: setup
+#| echo: false
+#| output: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(DT)
+```
 
 ```{r}
 #| label: check-params
 #| echo: false
-#| output: true
+#| output: false
 #| message: false
 #| warning: false
+
+# Check all required params are present
 for (p in params) {
     stopifnot(!is.null(p))
 }
 
+# Look up analysis definition from analysis type and service tier parameters
 analysis_type_lookup <- list(
     scrnaseq.standard = "RNAseq analysis (standard tier): genome alignment and cell counting",
     scrnaseq.advanced = "RNAseq analysis (advanced tier): genome alignment, cell counting, quality control, filtering, cell annotation, differential expression and functional enrichment analysis",
@@ -29,9 +44,24 @@ analysis_type_lookup <- list(
 analysis_type_key <- paste(params$analysis_type, params$service_tier, sep = ".")
 analysis_type_str <- analysis_type_lookup[[analysis_type_key]]
 stopifnot(!is.null(analysis_type_str))
+
+pipeline_lookup <- list(
+    `nf-core/scrnaseq` = "**nf-core/scrnaseq:** a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.",
+    `scrnavigator-nf` = "**scrnavigator-nf:** a Nextflow pipeline for processing single cell RNA sequencing data and performing differential expression and functional enrichment analyses."
+)
+
+# Validate the pipeline list
+required_pipeline_keys <- c("name", "samplesheet")
+stopifnot(all(required_pipeline_keys %in% names(params$pipelines)))
+stopifnot(dim(params$pipelines)[1] > 0)
+stopifnot(all(params$pipelines$name %in% names(pipeline_lookup)))
 ```
 
-*TODO:* Write a delivery message.
+<hr>
+
+**TODO:** Refine this delivery message
+
+<hr>
 
 Dear `{r} params$contact_name`,
 
@@ -41,47 +71,129 @@ We are pleased to let you know that the analysis of your data has been completed
 
 Please find below a summary of your data, the analyses performed, links to access your data, and explanations of the analysis steps performed.
 
-## Summary of input data
+## Summary of analyses
 
-### TODO:
+```{r}
+#| label: summarise-data
+#| echo: false
+#| output: false
+#| message: false
+#| warning: false
 
-- Reiterate the data type (WGS/WES, bulk/single-cell RNAseq, etc.).
-- Provide a summary table of the input data.
-    - Use samplesheets and parameters and join into single summary table.
-        - Curate which columns to show for brevity.
+all_samplesheet_files <- params$pipelines$samplesheet
+all_samplesheets <- lapply(all_samplesheet_files, read_csv)
+names(all_samplesheets) <- params$pipelines$name
+first_samplesheet <- all_samplesheets[[1]]
+first_samplesheet_name <- names(all_samplesheets)[1]
+remaining_samplesheets <- NULL
+if (length(all_samplesheets) > 1) {
+    remaining_samplesheets <- all_samplesheets[2:length(all_samplesheets)]
+}
 
-Your data type was: `{r} params$data_type`.
+# NOTE: This is very ugly, but unfortunately it is the only way I've found
+#       to dynamically print a variably-sized list of datatables in Quarto/Rmarkdown.
+#       This is because only one datatable is allowed to be printed per chunk,
+#       so we have to dynamically create chunks and manually knit them.
+#       Ref: https://stackoverflow.com/questions/39732560/why-does-datatable-not-print-when-looping-in-rmarkdown
+remaining_samplesheets_to_knit <- NULL
+for (n in names(remaining_samplesheets)) {
+    knit_text <- paste(
+        paste("####", n),
+        "```{r}",
+        paste0("#| label: summarise-data-samplesheet-", n),
+        "#| echo: false",
+        "#| output: true",
+        "#| message: false",
+        "#| warning: false",
+        paste0("datatable(remaining_samplesheets[['", n,"']])"),
+        "```",
+        sep = "\n"
+    )
+    remaining_samplesheets_to_knit <- c(remaining_samplesheets_to_knit, knit_text)
+}
 
-## Summary of analysis
+remaining_samplesheets_to_knit <- ifelse(
+    !is.null(remaining_samplesheets_to_knit),
+    paste(remaining_samplesheets_to_knit, collapse = "\n\n"),
+    ""
+)
+```
 
-### TODO:
+<hr>
 
-- Reiterate the type of analysis performed (genomic/somatic variant detection, bulk/single-cell RNAseq analysis, etc.).
-- Reiterate the analysis tier (standard/advanced/premium) and its inclusions.
-- State the pipelines that we ran, in order.
-    - Look into automating a flow chart of the pipelines ran (Mermaid?).
+**TODO:**
 
-You requested the following bioinformatics analysis package: `{r} analysis_type_str`.
+- Clean up the summary tables
+    - Curate which columns to show for brevity.
+    - Possibly join into a single summary table?
+- Look into automating a flow chart of the pipelines ran (Mermaid?).
+
+<hr>
+
+Please find below a summary of the data you provided to us and the analysis pipelines we ran:
+
+**Data type:** `{r} params$data_type`
+
+**Bioinformatics analysis package requested:** `{r} analysis_type_str`.
+
+**Analysis pipelines (in order):**
+
+```{r}
+#| label: analysis-pipeline-list
+#| echo: false
+#| output: asis
+#| message: false
+#| warning: false
+
+cat(paste("-", pipeline_lookup[names(all_samplesheets)], collapse = "\n"))
+```
+
+### Pipeline inputs:
+
+#### `{r} first_samplesheet_name`
+
+```{r}
+#| label: summarise-data-first-samplesheet
+#| echo: false
+#| output: true
+#| message: false
+#| warning: false
+
+datatable(first_samplesheet)
+```
+
+`r knitr::knit(text = remaining_samplesheets_to_knit)`
 
 ## Summary of outputs
 
-### TODO:
+<hr>
+
+**TODO:**
 
 - Provide a summary of the output data.
     - Use a table if appropriate.
     - Use a separate section/table for each pipeline. Ensure they are in the order of how they were run.
 
+<hr>
+
+
 ## Data access
 
-### TODO:
+<hr>
+
+**TODO:**
 
 - Provide links and/or instructions to access the output data.
     - This will be done via Globus. Look into how this will work and can be implemented.
     - Optionally, also provide direct links to download the data, if appropriate.
 
+<hr>
+
 ## Analysis details
 
-### TODO:
+<hr>
+
+**TODO:**
 
 - For each pipeline that was run, list:
     - What the pipeline does.
@@ -89,3 +201,5 @@ You requested the following bioinformatics analysis package: `{r} analysis_type_
     - What parameters the pipeline takes and how they affect the analysis.
     - What the pipeline ouptuts are and what they mean.
 - Ensure this section is thorough but also user-friendly. Keep jargon to a minimum and focus on providing rationales for each step.
+
+<hr>

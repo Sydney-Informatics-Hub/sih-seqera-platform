@@ -1,0 +1,9 @@
+contact_name: Dr Researcher
+data_type: scRNAseq
+analysis_type: scrnaseq
+service_tier: advanced
+pipelines:
+  - name: nf-core/scrnaseq
+    samplesheet: ../templates/nf-core/scrnaseq/samplesheet.csv
+  - name: scrnavigator-nf
+    samplesheet: ../templates/sih/scrnavigator-nf/samplesheet.csv
