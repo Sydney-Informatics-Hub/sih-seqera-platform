@@ -45,16 +45,23 @@ analysis_type_key <- paste(params$analysis_type, params$service_tier, sep = ".")
 analysis_type_str <- analysis_type_lookup[[analysis_type_key]]
 stopifnot(!is.null(analysis_type_str))
 
+# Validate the pipeline list
 pipeline_lookup <- list(
     `nf-core/scrnaseq` = "**nf-core/scrnaseq:** a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.",
     `scrnavigator-nf` = "**scrnavigator-nf:** a Nextflow pipeline for processing single cell RNA sequencing data and performing differential expression and functional enrichment analyses."
 )
 
-# Validate the pipeline list
 required_pipeline_keys <- c("name", "samplesheet")
 stopifnot(all(required_pipeline_keys %in% names(params$pipelines)))
 stopifnot(dim(params$pipelines)[1] > 0)
 stopifnot(all(params$pipelines$name %in% names(pipeline_lookup)))
+
+# Get templates for pipeline/analysis descriptions based on pipeline names in params
+analysis_templates <- list(
+    `nf-core/scrnaseq` = 'templates/nf-core.scrnaseq.qmd',
+    `scrnavigator-nf` = 'templates/sih.scrnavigator-nf.qmd'
+)
+analysis_templates <- analysis_templates[params$pipelines$name]
 ```
 
 <hr>
@@ -83,6 +90,33 @@ Please find below a summary of your data, the analyses performed, links to acces
 all_samplesheet_files <- params$pipelines$samplesheet
 all_samplesheets <- lapply(all_samplesheet_files, read_csv)
 names(all_samplesheets) <- params$pipelines$name
+cols_to_keep <- params$pipelines$samplesheet_show_cols
+cols_to_remove <- params$pipelines$samplesheet_hide_cols
+if (is.null(cols_to_keep)) {
+    cols_to_keep <- rep(list(NULL), length(names(all_samplesheets)))
+}
+if (is.null(cols_to_remove)) {
+    cols_to_remove <- rep(list(NULL), length(names(all_samplesheets)))
+}
+names(cols_to_keep) <- names(all_samplesheets)
+names(cols_to_remove) <- names(all_samplesheets)
+
+all_samplesheet_names <- names(all_samplesheets)
+all_samplesheets <- lapply(names(all_samplesheets), function(n) {
+    df <- all_samplesheets[[n]]
+    keep_cols <- cols_to_keep[[n]]
+    remove_cols <- cols_to_remove[[n]]
+    if (!is.null(keep_cols)) {
+        df <- df %>%
+            select(any_of(keep_cols))
+    } else if (!is.null(remove_cols)) {
+        df <- df %>%
+            select(-any_of(remove_cols))
+    }
+    df
+})
+names(all_samplesheets) <- all_samplesheet_names
+
 first_samplesheet <- all_samplesheets[[1]]
 first_samplesheet_name <- names(all_samplesheets)[1]
 remaining_samplesheets <- NULL
@@ -123,9 +157,7 @@ remaining_samplesheets_to_knit <- ifelse(
 
 **TODO:**
 
-- Clean up the summary tables
-    - Curate which columns to show for brevity.
-    - Possibly join into a single summary table?
+- Possibly join tables into a single summary table?
 - Look into automating a flow chart of the pipelines ran (Mermaid?).
 
 <hr>
@@ -164,19 +196,6 @@ datatable(first_samplesheet)
 
 `r knitr::knit(text = remaining_samplesheets_to_knit)`
 
-## Summary of outputs
-
-<hr>
-
-**TODO:**
-
-- Provide a summary of the output data.
-    - Use a table if appropriate.
-    - Use a separate section/table for each pipeline. Ensure they are in the order of how they were run.
-
-<hr>
-
-
 ## Data access
 
 <hr>
@@ -190,6 +209,15 @@ datatable(first_samplesheet)
 <hr>
 
 ## Analysis details
+
+```{r}
+#| label: dynamic-analysis-sections
+#| echo: false
+#| output: false
+#| message: false
+#| warning: false
+#| child: !expr unlist(analysis_templates)
+```
 
 <hr>
 

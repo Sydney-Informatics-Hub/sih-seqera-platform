@@ -1,5 +1,7 @@
 project:
   output-dir: report
+  render:
+    - index.qmd
 
 format:
   html:

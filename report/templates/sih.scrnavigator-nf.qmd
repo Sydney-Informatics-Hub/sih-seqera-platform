@@ -1,0 +1,3 @@
+### scrnavigator-nf
+
+This describes the SIH scrnavigator-nf pipeline.

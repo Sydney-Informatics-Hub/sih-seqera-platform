@@ -5,5 +5,19 @@ service_tier: advanced
 pipelines:
   - name: nf-core/scrnaseq
     samplesheet: ../templates/nf-core/scrnaseq/samplesheet.csv
+    samplesheet_show_cols:
+      - sample
+      - fastq_1
+      - fastq_2
+      - expected_cells
   - name: scrnavigator-nf
     samplesheet: ../templates/sih/scrnavigator-nf/samplesheet.csv
+    samplesheet_hide_cols:
+      - rds
+      - min_ncount
+      - max_ncount
+      - min_nfeature
+      - max_nfeature
+      - min_mt_pct
+      - max_mt_pct
+      - cells_to_remove
