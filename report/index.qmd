@@ -47,7 +47,7 @@ stopifnot(!is.null(analysis_type_str))
 
 # Validate the pipeline list
 pipeline_lookup <- list(
-    `nf-core/scrnaseq` = "**nf-core/scrnaseq:** a bioinformatics best-practice analysis pipeline for processing 10x Genomics single-cell RNA-seq data.",
+    `nf-core/scrnaseq` = "**nf-core/scrnaseq:** a bioinformatics best-practice analysis pipeline for processing barcode-based single-cell RNA-seq data.",
     `scrnavigator-nf` = "**scrnavigator-nf:** a Nextflow pipeline for processing single cell RNA sequencing data and performing differential expression and functional enrichment analyses."
 )
 
