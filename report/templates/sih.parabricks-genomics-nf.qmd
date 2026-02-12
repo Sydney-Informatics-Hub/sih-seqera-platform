@@ -1,0 +1,23 @@
+### Parabricks-Genomics-nf
+
+The `Parabricks-Genomics-nf` pipeline was developed by the Sydney Informatics Hub as a germline variant calling pipeline using the [NVIDIA Parabricks](https://docs.nvidia.com/clara/parabricks/latest/index.html) GPU-accelerated bioinformatics software. The pipeline takes whole genome or whole exome sequencing data in the form of FASTQ files and initially aligns the data to the genome. It then runs the tool `DeepVariant` for performing variant detection and `GLnexus` for joint genotyping. Optionally, the called variants can be additionally annotated with Ensembl's Variant Effect Predictor (VEP) software.
+
+#### Inputs
+
+
+
+#### Parameters
+
+
+
+#### Analysis details
+
+
+
+#### Outputs
+
+
+
+#### Further reading
+
+The pipeline code base is located on GitHub: [https://github.com/Sydney-Informatics-Hub/Parabricks-Genomics-nf](https://github.com/Sydney-Informatics-Hub/Parabricks-Genomics-nf).
