@@ -9,9 +9,9 @@ The `scrnavigator-nf` pipeline was developed by the Sydney Informatics Hub as a 
 5. Cell type annotation
 6. Pseudobulking
 7. Differential expression (case vs control)
-8. Functional enrichment analysis
+8. Functional enrichment analysis (FEA)
 
-The pipeline is designed to be run iteratively. An initial run of just the quality control stage can be used to determine filtering thresholds. Then the dataset can be filtered and integrated in a second pass. Cell type annotation is optional; if performed, the annotations can be inspected and cell groupings can be determined for downstream pseudobulking, differential expression and functional enrichment analysis.
+The pipeline is designed to be run iteratively. An initial run of just the quality control stage can be used to determine filtering thresholds. Then the dataset can be filtered and integrated in a second pass. Cell type annotation is optional; if performed, the annotations can be inspected and cell groupings can be determined for downstream pseudobulking, differential expression and functional enrichment analysis (FEA).
 
 #### Inputs
 
@@ -99,7 +99,7 @@ A typical use-case for single cell sequencing data is to analyse differences bet
 
 Once cells have been analysed, we also annotate the entire cluster using a semi-automated approach. We look for the most abundant predicted cell type in a given cluster, and if the proportion of that cell type is higher than some threshold, we assign that cell type to that cluster; otherwise, the cluster is considered "ambiguous". This automated cluster annotation is written to the final pipeline report and can be manually inspected. This way, we can override the automated decision with a manual cluster annotation if desired.
 
-##### Pseudobulking
+##### Pseudobulking and differential expression analysis
 
 There are a few different approaches to performing differential expression analysis on single cell sequencing data. One is to treat each cell as a separate "sample" and perform regular differential expression using the entire dataset. However, this has a significant flaw: cells are not independent of one another, and therefore violate the typical assumptions made by the underlying statistical models for differential expression. This means that significance tests can be severely biased and may produce more false positives than expected.
 
@@ -107,17 +107,42 @@ A very common approach to solving this issue is "pseudobulking". This approach a
 
 This pipeline allows the user to define a set of cell annotations and metadata fields to group by when performing pseudobulking. For example, if we want to compare a particular cell type between tumor samples and healthy tissue samples, we can pseudobulk by the automated cluster annotations and a "tumor" metadata field. The result will be a dataset with up to `n × p` "samples", where `n` is the number of original samples and `p` is the number of distinct cell types in the dataset. One of these new pseudobulk groups might be `sample1_B-cell_positive` and another might be `sample2_B-cell_negative`, with `_positive` and `_negative` referring to each original sample's respective tumor status. In downstream differential expression analysis, we could then compare all `_B-cell_positive` samples against all `_B-cell_negative` samples to see how B-cell gene expression differs between tumor samples and healthy tissue.
 
-##### Differential expression analysis
+In this pipeline, we are able to define any number of case-vs-control comparisons like this to make. As long as we have, at the very minimum, 2 samples from each pseudobulked group to compare (but ideally many more!), we can perform a differential expression analysis between those two groups. Note that there are a few caveats to this:
 
-
+1. Smaller sample sizes will be underpowered and will struggle to find meaningful differences between groups. While technically 2 samples is the minimum required for these analyses, ideally you will have many more samples. The ideal number for an experiment will vary depending on the typical expression level of a gene and how subtle a change you expect to find.
+2. The more comparisons that you make, the more false positives that you will expect to find. This is the multiple testing problem: if you consider all results with a p-value of less than 0.05 to be significant, then even in an experiment with no true positive results, you will expect to find around 5% of your results to have an erroneously "significant" p-value. We correct for this by applying a **false discovery rate** (FDR) p-value correction to **all** of the differential expression tests performed. Because of this, it is often better to make as few comparisons as is required for your experimental question, so as to avoid generating too many false positive results.
 
 ##### Functional enrichment analysis
 
+Once your data has been pseudobulked and analysed for differentially expressed genes, we run the results through two types of **functional enrichment analysis** (FEA) - i.e. techniques that look for **gene pathways** that are significantly enriched for up- and down-regulated genes in your dataset. The two techniques that we use are Gene Set Enrichment Analysis (GSEA) and Over-Representation Analysis (ORA). Both methods have a similar goal of identifying enrichment of differentially-expressed genes within functional pathways, although they go about this in slightly different ways and can therefore produce somewhat different results.
 
+GSEA works by looking at the overall distribution of your differential expression results. All of the genes are first ranked by their fold-change values (including all of the non-significant genes). Then, for each gene set that is defined (e.g. gene ontology pathways or KEGG pathways), the algorithm looks for whether those genes are clustered together at the top or the bottom of that ranked list - if so, it indicates that the gene set is enriched for up- or down-regulated genes, respectively.
+
+On the other hand, ORA works by first subsetting your data to the **significantly** differentially expressed genes. Then, for each gene set, it looks to see whether there are more differentially expressed genes within that gene set than you would expect to occur by random chance. If so, it suggests an enrichment within that gene set.
+
+Note that GSEA naturally returns an indication of the **direction** of regulation for the gene set, i.e. whether it is being up- or down-regulated. ORA, however, does not: it only indicates whether the gene set is enriched for differentially expressed genes. When using ORA, you will need to look at the individual genes within each gene set of interest to determine how they are being regulated.
 
 #### Outputs
 
+The `scrnavigator-nf` pipeline will output the following folder structure, assuming all of the above steps have been performed:
 
+- `report`: This contains the final pipeline report, including all QC plots, differential expression tables and functional enrichment analysis plots.
+- `qc`: This contains all the initial quality control results.
+    - `qc/<SAMPLE>/preprocess`: The initial pre-processed Seurat data is within this folder.
+    - `qc/<SAMPLE>/filter`: The QC plots and the filtered Seurat data is here.
+    - `qc/<SAMPLE>/cluster`: The clustered Seurat data and associated plots.
+    - `qc/<SAMPLE>/doublets`: The Seurat data with doublets removed.
+- `integration`: This contains all results from the integration step.
+- `annotation`: This contains all annotation results.
+    - `annotation/cell_cycle`: Cell cycle annotation results.
+    - `annotation/db`: Automated annotation from HPCA (human data) or other external databases.
+    - `annotation/custom`: Custom gene program annotation results.
+    - `annotation/clusters`: Cluster annotation results.
+- `analysis`: This contains all differential expression and FEA results.
+    - `analysis/pseudobulk`: This contains the pseudobulked Seurat data.
+    - `analysis/differential_expression`: All differential expression results, including a single, combined CSV file containing all comparison results.
+    - `analysis/fea/gsea`: All GSEA results and plots.
+    - `analysis/fea/ora`: All ORA results and plots.
 
 #### Further reading
 
