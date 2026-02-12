@@ -54,7 +54,7 @@ The final output of this pipeline is a **count matrix**. This is essentially a t
 - `Seurat/RDS`: For use with the R package `Seurat`
 - `SCE/RDS`: For use with the R package `SingleCellExperiment`
 
-In particular, we use the `Seurat/RDS` formatted data for our downstream `scrnavigator-nf` pipeline (part of our advanced analysis tier), as `Seurat` is a mature and well-established framework for single cell RNA analysis.
+In particular, we use the `Seurat/RDS` formatted data for our downstream `scrnavigator-nf` pipeline (part of our advanced analysis tier), as `Seurat` is a mature and well-established framework for single cell RNA sequencing analysis.
 
 #### Further reading
 
