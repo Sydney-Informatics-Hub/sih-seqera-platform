@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd $(realpath "$0")
+cd $(dirname $(realpath "$0"))
 
 quarto render . --execute-params params.yaml

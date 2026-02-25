@@ -34,9 +34,9 @@ for (p in params) {
 
 # Look up analysis definition from analysis type and service tier parameters
 analysis_type_lookup <- list(
-    scrnaseq.standard = "RNAseq analysis (standard tier): genome alignment and cell counting",
-    scrnaseq.advanced = "RNAseq analysis (advanced tier): genome alignment, cell counting, quality control, filtering, cell annotation, differential expression and functional enrichment analysis",
-    scrnaseq.premium = "RNAseq analysis (premium tier): full custom single-cell RNAseq analysis",
+    scrnaseq.standard = "scRNAseq analysis (standard tier): genome alignment and cell counting",
+    scrnaseq.advanced = "scRNAseq analysis (advanced tier): genome alignment, cell counting, quality control, filtering, cell annotation, differential expression and functional enrichment analysis",
+    scrnaseq.premium = "scRNAseq analysis (premium tier): full custom single-cell RNAseq analysis",
     germline.standard = "Germline variant calling (standard tier): genome alignment, germline variant calling and annotation",
     somatic.standard = "Somatic variant calling (standard tier): genome alignment, somatic variant calling and annotation"
 )
