@@ -2,14 +2,15 @@
 
 **Getting started:**
 
-1. Create a Personal Access Token
-2. Create shared tower agent credentials
-3. Initialise the tower agent
-4. Run the custom SIH `auto_tower` agent
-5. Add GitHub credentials
-6. Set up a compute environment
-7. Add a new pipeline to Seqera Platform
-8. Run a pipeline
+1. [How to prepare a pipeline for Seqera Platform](docs/pipeline_schema.md)
+2. Create a Personal Access Token
+3. Create shared tower agent credentials
+4. Initialise the tower agent
+5. Run the custom SIH `auto_tower` agent
+6. Add GitHub credentials
+7. Set up a compute environment
+8. Add a new pipeline to Seqera Platform
+9. Run a pipeline
 
 ## How to configure your Seqera Personal Access Token for Gadi
 
