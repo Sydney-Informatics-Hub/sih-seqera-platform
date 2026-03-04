@@ -34,7 +34,7 @@ python3 -m pip install nf-core
 
 2. Confirm the install worked by running `nf-core`. You should see a similar output:
 
-INSERT SCREENSHOT
+![](img/nfcore_tools1.png)
 
 3. Change directories to the pipeline you need to create a schema for. e.g. `cd /scratch/er01/my_pipeline`.
 4. Build the initial schema:
@@ -44,7 +44,7 @@ module load nextflow
 nf-core pipelines schema build
 ```
 
-INSERT SCREENSHOT
+![](img/nfcore_tools2.png)
 
 5. If prompted with `✨ Default for 'params.<name>' is not in schema (def='<value>'). Update pipeline schema? [y/n]:`, enter **y**. This ensures all parameters are captured in the schema correctly.
 6. When prompted with `🚀  Launch web builder for customisation and editing? [y/n]:`, enter **y**.
