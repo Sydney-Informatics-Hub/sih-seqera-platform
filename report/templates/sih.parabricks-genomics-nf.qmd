@@ -1,23 +1,107 @@
 ### Parabricks-Genomics-nf
 
-The `Parabricks-Genomics-nf` pipeline was developed by the Sydney Informatics Hub as a germline variant calling pipeline using the [NVIDIA Parabricks](https://docs.nvidia.com/clara/parabricks/latest/index.html) GPU-accelerated bioinformatics software. The pipeline takes whole genome or whole exome sequencing data in the form of FASTQ files and initially aligns the data to the genome. It then runs the tool `DeepVariant` for performing variant detection and `GLnexus` for joint genotyping. Optionally, the called variants can be additionally annotated with Ensembl's Variant Effect Predictor (VEP) software.
+The `Parabricks-Genomics-nf` pipeline was developed by the Sydney Informatics Hub
+as an accelerated, best-practice workflow for germline variant calling, suited for
+population-scale, mammalian cohorts with an available reference genome. This pipeline
+takes short-read data and performs the following:
+
+1. Data validation and quality control
+2. Reference indexing (optional)
+3. Read mapping
+4. Per-sample genotyping
+5. Cohort joint genotyping
+6. Annotation (optional)
+7. Summary metrics and reporting
+
+Additionally, this pipeline is suitable for population screening projects, as it
+executes Parabrick's implementations of BWA‑MEM for short read alignment, and
+Google's DeepVariant for short variant calling.
 
 #### Inputs
 
+At the very minimum, the pipeline requires:
 
+- A reference genome (FASTA)
+- Sample names
+- Paired-end FASTQ read files
 
 #### Parameters
 
-
+The key parameters that need to be provided for this pipeline include:
+- A sample sheet (CSV) that includes the name of the samples, and the paths to the associated paired-end FASTQ reads.
+- A reference genome file to use (for example, GrCh38.fa if studying humans.)
+- (Optional) Ensembl Variant Effect Predictor (VEP) annotation settings:
+   - Specifying an available species to cache to use
 
 #### Analysis details
 
+##### Data validation and quality control
 
+The workflow begins by checking that your sample sheet is complete and that all
+input FASTQ files and reference assets are present. It then runs FastQC on
+the raw reads and aggregates results with MultiQC. This step gives provides a
+check for base quality, adapter content, and other sequencing metrics so you 
+can identify sequencing issues to help interpret the results of the pipeline.
+
+##### Reference indexing (optional)
+
+#TODO: Confirm what users need to provide, e.g. indication of reference version only, instead of the files itself
+
+If a BWA index for your reference genome (e.g., GRCh38) isn’t already
+available on your system, the pipeline can create one for you. Alternatively,
+you may supply these files.
+
+##### Read mapping
+
+Reads are aligned to the reference using NVIDIA Parabricks `fq2bam`, a GPU‑accelerated 
+equivalent of BWA‑MEM that also performs sorting and duplicate marking (and can 
+optionally run base quality score recalibration). The result is a coordinate‑sorted
+BAM file and its index, ready for variant calling. This stage is where most of the
+speed‑up happens compared with CPU‑only pipelines.
+
+##### Per-sample genotyping
+
+Each sample is genotyped with Parabricks DeepVariant, producing a per‑sample gVCF/VCF.
+DeepVariant uses deep learning to improve accuracy for single‑nucleotide variants and 
+small insertions/deletions while remaining concordant with standard best‑practice methods. 
+Note that DeepVariant models are primarily trained on human data, so non‑human projects 
+should be validated carefully.
+
+DeepVariant and GLnexus (see Cohort joint genotyping) have been shown to outperform GATK's HaplotypeCaller and 
+GenomicsDB in terms of accuracy and scalability (Yun et al. 2020, Barbitoff et al. 2022, 
+Lin et al. 2022, Abdelwahab et al. 2023). DeepVariant employs a deep learning technique 
+to call short variants (SNVs and indels) which leads to higher accuracy and sensitivity
+compared with traditional variant callers. However, it has only been trained on human data.
+
+##### Cohort joint genotyping
+
+When you have multiple samples, the per‑sample gVCFs are merged and jointly genotyped with
+GLnexus to create a single cohort VCF. Joint calling helps ensure consistent genotype 
+assignments across the cohort and scales well to large studies.
+
+##### Annotation (optional)
+
+If enabled, the pipeline downloads/configures Ensembl VEP and annotates variants with 
+gene and consequence information. This adds helpful biological context, such as predicted
+impact and affected transcripts, to the VCF for downstream interpretation.
+
+##### Summary metrics and reporting
+Finally, the pipeline compiles run‑wide summaries. It generates VCF statistics 
+(e.g., counts by variant type) and a consolidated MultiQC report so you can 
+review mapping quality, coverage, and variant metrics in one place. These outputs 
+make it easy to document run quality and share results with collaborators.
 
 #### Outputs
 
+The `Parabricks-Genomics-nf` piapeline will output the following folder structure:
 
+- `fastqc/`: contains fastq-level summary reports organised into sample-level subdirectories
+- `bams/`: contains alignment files and qc reports organised into sample-level subdirectories
+- `variants/`: contains sample-level g.vcf files organised into sample-level subdirectories, a cohort-level bcf and vcf file, and a cohort-level variant summary file
+- `annotations/`: contains an annotated cohort-level VEP file and cohort-level summary report
+- `multiqc/`: contains a summary report of all processes run by the pipeline
+- `VEP_cache/`: contains the downloaded VEP cache files used for variant annotation
 
 #### Further reading
 
-The pipeline code base is located on GitHub: [https://github.com/Sydney-Informatics-Hub/Parabricks-Genomics-nf](https://github.com/Sydney-Informatics-Hub/Parabricks-Genomics-nf).
+- **GitHub repository** (source, config, modules, usage): https://github.com/Sydney-Informatics-Hub/Parabricks-Genomics-nf
