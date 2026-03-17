@@ -39,85 +39,118 @@ def parse_args():
     return args
 
 
-def construct_auth_header(token):
-    return {
-        'Authorization': f'Bearer {token}',
-    }
+class SeqeraApi:
 
+    def __init__(self, token_path, org_id_or_name=None, workspace_id_or_name=None, workflow=None):
+        self.token = self._get_token(token_path)
+        self.auth_header = { 'Authorization': f'Bearer {self.token}' }
+        self.all_orgs = self._get_all_orgs()
+        self.set_org(org_id_or_name=org_id_or_name)
+        self.all_workspaces = self._get_all_workspaces()
+        self.set_workspace(workspace_id_or_name=workspace_id_or_name)
+        self.all_workflows = self._get_all_workflows()
 
-def get_all_orgs(token):
-    endpoint = f'{BASE_URL}/orgs'
-    r = requests.get(endpoint, headers=construct_auth_header(token))
-    if r.status_code != 200:
-        raise ValueError('Error in fetching organisation list.')
-    return r.json()
+    def set_org(self, org_id_or_name):
+        self.org_id_or_name = org_id_or_name
+        self.org = self._get_orgid()
 
+    def set_workspace(self, workspace_id_or_name):
+        self.workspace_id_or_name = workspace_id_or_name
+        self.workspace = self._get_workspace_id()
 
-def get_orgid(token, org_id_or_name):
-    all_orgs = get_all_orgs(token)
-    for org in all_orgs['organizations']:
-        if org_id_or_name == org['orgId']:
-            return org_id_or_name
-        elif org_id_or_name in [org['name'], org['fullName']]:
-            return org['orgId']
-    return None
+    def _get_token(self, token_path):
+        with open(token_path, 'r') as f:
+            token = f.readline().strip()
+        return token
 
+    def _get_all_orgs(self):
+        endpoint = f'{BASE_URL}/orgs'
+        r = requests.get(endpoint, headers=self.auth_header)
+        if r.status_code != 200:
+            raise ValueError('Error in fetching organisation list.')
+        return r.json()
 
-def get_all_workspaces(token, org_id_or_name):
-    orgid = get_orgid(token, org_id_or_name)
-    if not orgid:
+    def _get_orgid(self):
+        if not self.all_orgs or not self.org_id_or_name:
+            return None
+        for org in self.all_orgs['organizations']:
+            if self.org_id_or_name == org['orgId']:
+                return self.org_id_or_name
+            elif self.org_id_or_name in [org['name'], org['fullName']]:
+                return org['orgId']
         return None
-    endpoint = f'{BASE_URL}/orgs/{orgid}/workspaces'
-    r = requests.get(endpoint, headers=construct_auth_header(token))
-    if r.status_code != 200:
-        raise ValueError('Error in fetching workspace list.')
-    return r.json()
 
+    def _get_all_workspaces(self):
+        if not self.org:
+            return {}
+        endpoint = f'{BASE_URL}/orgs/{self.org}/workspaces'
+        r = requests.get(endpoint, headers=self.auth_header)
+        if r.status_code != 200:
+            raise ValueError('Error in fetching workspace list.')
+        return r.json()
 
-def get_workspace_id(token, org_id_or_name, workspace_id_or_name):
-    orgid = get_orgid(token, org_id_or_name)
-    all_workspaces = get_all_workspaces(token, orgid)
-    if not all_workspaces:
+    def _get_workspace_id(self):
+        if not self.all_workspaces or not self.workspace_id_or_name:
+            return None
+        for workspace in self.all_workspaces['workspaces']:
+            if self.workspace_id_or_name == workspace['id']:
+                return self.workspace_id_or_name
+            elif self.workspace_id_or_name in [workspace['name'], workspace['fullName']]:
+                return workspace['id']
         return None
-    for workspace in all_workspaces['workspaces']:
-        if workspace_id_or_name == workspace['id']:
-            return workspace_id_or_name
-        elif workspace_id_or_name in [workspace['name'], workspace['fullName']]:
-            return workspace['id']
-    return None
 
+    def _get_all_workflows(self):
+        endpoint = f'{BASE_URL}/pipelines'
+        if self.workspace:
+            endpoint =f'{endpoint}?workspaceId={self.workspace}'
+        r = requests.get(endpoint, headers=self.auth_header)
+        if r.status_code != 200:
+            raise ValueError('Error in fetching workflow list.')
+        return r.json()
 
-def get_all_workflows(token, org_id_or_name, workspace_id_or_name):
-    workspaceid = None
-    if workspace_id_or_name:
-        workspaceid = get_workspace_id(token, org_id_or_name, workspace_id_or_name)
-    endpoint = f'{BASE_URL}/pipelines'
-    if workspaceid:
-        endpoint =f'{endpoint}?workspaceId={workspaceid}'
-    r = requests.get(endpoint, headers=construct_auth_header(token))
-    if r.status_code != 200:
-        raise ValueError('Error in fetching workflow list.')
-    return r.json()
+    def _list_orgs(self):
+        orgs = []
+        for org in self.all_orgs['organizations']:
+            orgs.append((org['orgId'], org['name']))
+        return orgs
+    
+    def print_orgs(self):
+        for id, name in self._list_orgs():
+            print(f'{name}:\t{id}')
 
+    def _list_workspaces(self):
+        workspaces = []
+        for workspace in self.all_workspaces['workspaces']:
+            workspaces.append((workspace['id'], workspace['name']))
+        return workspaces
 
-def get_token(token_path):
-    with open(token_path, 'r') as f:
-        token = f.readline().strip()
-    return token
+    def print_workspaces(self):
+        for id, name in self._list_workspaces():
+            print(f'{name}:\t{id}')
+
+    def _list_workflows(self):
+        workflows = []
+        for workflow in self.all_workflows['pipelines']:
+            workflows.append((workflow['pipelineId'], workflow['name']))
+        return workflows
+
+    def print_workflows(self):
+        for id, name in self._list_workflows():
+            print(f'{name}:\t{id}')
 
 
 def main(args):
-    token = get_token(args.token)
+    token = args.token
+    org = args.org
+    workspace = args.workspace if hasattr(args, 'workspace') else None
+    api = SeqeraApi(token_path=token, org_id_or_name=org, workspace_id_or_name=workspace)
     if args.subcommand == 'list':
-        if args.list_subcommand == 'workflows':
-            workflows = get_all_workflows(token, args.org, args.workspace)
-            print(workflows)
+        if args.list_subcommand == 'orgs':
+            api.print_orgs()
         elif args.list_subcommand == 'workspaces':
-            workspaces = get_all_workspaces(token, args.org)
-            print(workspaces)
-        elif args.list_subcommand == 'orgs':
-            orgs = get_all_orgs(token)
-            print(orgs)
+            api.print_workspaces()
+        elif args.list_subcommand == 'workflows':
+            api.print_workflows()
 
 
 if __name__ == '__main__':
