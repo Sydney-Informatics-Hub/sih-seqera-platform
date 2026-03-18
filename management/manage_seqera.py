@@ -3,18 +3,7 @@ import requests
 import argparse
 from pathlib import Path
 from enum import StrEnum
-
-
-BASE_URL = 'https://seqera.services.biocommons.org.au/api'
-
-
-class Endpoints(StrEnum):
-    LIST_WORKFLOWS = 'pipelines'
-    LIST_WORKSPACES = 'orgs/'
-
-    @property
-    def full(self):
-        return f'{BASE_URL}/{self.value}'
+import re
 
 
 def parse_args():
@@ -30,6 +19,8 @@ def parse_args():
     list_workspaces = list_subparsers.add_parser('workspaces', help='List available workspaces.')
     list_workflows = list_subparsers.add_parser('workflows', help='List available workflows.')
     list_workflows.add_argument('-w', '--workspace', help='Workspace ID', type=str, default='')
+    list_runs = list_subparsers.add_parser('runs', help='List available runs.')
+    list_runs.add_argument('-w', '--workspace', help='Workspace ID', type=str, default='')
 
     args = parser.parse_args()
 
@@ -42,6 +33,7 @@ def parse_args():
 class SeqeraApi:
 
     def __init__(self, token_path, org_id_or_name=None, workspace_id_or_name=None, workflow=None):
+        self.base_url = 'https://seqera.services.biocommons.org.au/api'
         self.token = self._get_token(token_path)
         self.auth_header = { 'Authorization': f'Bearer {self.token}' }
         self.all_orgs = self._get_all_orgs()
@@ -49,6 +41,16 @@ class SeqeraApi:
         self.all_workspaces = self._get_all_workspaces()
         self.set_workspace(workspace_id_or_name=workspace_id_or_name)
         self.all_workflows = self._get_all_workflows()
+        self.all_runs = self._get_all_runs()
+
+    def _get_endpoint(self, suffix):
+        base_url = str(self.base_url)
+        if base_url.endswith('/'):
+            base_url = re.sub(r'/$', '', base_url)
+        clean_suffix = str(suffix)
+        if not clean_suffix.startswith('/'):
+            clean_suffix = f'/{clean_suffix}'
+        return f'{self.base_url}{suffix}'
 
     def set_org(self, org_id_or_name):
         self.org_id_or_name = org_id_or_name
@@ -64,7 +66,7 @@ class SeqeraApi:
         return token
 
     def _get_all_orgs(self):
-        endpoint = f'{BASE_URL}/orgs'
+        endpoint = self._get_endpoint('/orgs')
         r = requests.get(endpoint, headers=self.auth_header)
         if r.status_code != 200:
             raise ValueError('Error in fetching organisation list.')
@@ -83,7 +85,7 @@ class SeqeraApi:
     def _get_all_workspaces(self):
         if not self.org:
             return {}
-        endpoint = f'{BASE_URL}/orgs/{self.org}/workspaces'
+        endpoint = self._get_endpoint(f'/orgs/{self.org}/workspaces')
         r = requests.get(endpoint, headers=self.auth_header)
         if r.status_code != 200:
             raise ValueError('Error in fetching workspace list.')
@@ -100,9 +102,18 @@ class SeqeraApi:
         return None
 
     def _get_all_workflows(self):
-        endpoint = f'{BASE_URL}/pipelines'
+        endpoint = self._get_endpoint('/pipelines')
         if self.workspace:
-            endpoint =f'{endpoint}?workspaceId={self.workspace}'
+            endpoint = self._get_endpoint(f'/pipelines?workspaceId={self.workspace}')
+        r = requests.get(endpoint, headers=self.auth_header)
+        if r.status_code != 200:
+            raise ValueError('Error in fetching workflow list.')
+        return r.json()
+    
+    def _get_all_runs(self):
+        endpoint = self._get_endpoint('/workflow')
+        if self.workspace:
+            endpoint = self._get_endpoint(f'/workflow?workspaceId={self.workspace}')
         r = requests.get(endpoint, headers=self.auth_header)
         if r.status_code != 200:
             raise ValueError('Error in fetching workflow list.')
@@ -110,6 +121,8 @@ class SeqeraApi:
 
     def _list_orgs(self):
         orgs = []
+        if not self.all_orgs:
+            return orgs
         for org in self.all_orgs['organizations']:
             orgs.append((org['orgId'], org['name']))
         return orgs
@@ -120,6 +133,8 @@ class SeqeraApi:
 
     def _list_workspaces(self):
         workspaces = []
+        if not self.all_workspaces:
+            return workspaces
         for workspace in self.all_workspaces['workspaces']:
             workspaces.append((workspace['id'], workspace['name']))
         return workspaces
@@ -130,12 +145,26 @@ class SeqeraApi:
 
     def _list_workflows(self):
         workflows = []
+        if not self.all_workflows:
+            return workflows
         for workflow in self.all_workflows['pipelines']:
             workflows.append((workflow['pipelineId'], workflow['name']))
         return workflows
 
     def print_workflows(self):
         for id, name in self._list_workflows():
+            print(f'{name}:\t{id}')
+
+    def _list_runs(self):
+        runs = []
+        if not self.all_runs:
+            return runs
+        for run in self.all_runs['workflows']:
+            runs.append((run['workflow']['id'], run['workflow']['runName']))
+        return runs
+
+    def print_runs(self):
+        for id, name in self._list_runs():
             print(f'{name}:\t{id}')
 
 
@@ -151,6 +180,8 @@ def main(args):
             api.print_workspaces()
         elif args.list_subcommand == 'workflows':
             api.print_workflows()
+        elif args.list_subcommand == 'runs':
+            api.print_runs()
 
 
 if __name__ == '__main__':
