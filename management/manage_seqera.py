@@ -12,6 +12,7 @@ def parse_args():
     )
     parser.add_argument('-t', '--token', help='Path to a file containing your bearer token.', type=str, default=(Path.home() / '.tower/token'))
     parser.add_argument('-o', '--org', help='Organisation ID or name', type=str, default='')
+    parser.add_argument('-w', '--workspace', help='Workspace ID', type=str, default='')
     subparsers = parser.add_subparsers(dest='subcommand', help='Subcommand help.')
     list_parser = subparsers.add_parser('list', help='List objects on Seqera.')
     list_subparsers = list_parser.add_subparsers(dest='list_subcommand', help="list subcommand help.")
@@ -19,8 +20,8 @@ def parse_args():
     list_workspaces = list_subparsers.add_parser('workspaces', help='List available workspaces.')
     list_workflows = list_subparsers.add_parser('workflows', help='List available workflows.')
     list_workflows.add_argument('-w', '--workspace', help='Workspace ID', type=str, default='')
-    list_runs = list_subparsers.add_parser('runs', help='List available runs.')
-    list_runs.add_argument('-w', '--workspace', help='Workspace ID', type=str, default='')
+    list_runs = list_subparsers.add_parser('runs', help='List all runs in the workspace.')
+    list_launches = list_subparsers.add_parser('launches', help='List all launches in the workspace.')
 
     args = parser.parse_args()
 
@@ -42,6 +43,7 @@ class SeqeraApi:
         self.set_workspace(workspace_id_or_name=workspace_id_or_name)
         self.all_workflows = self._get_all_workflows()
         self.all_runs = self._get_all_runs()
+        self.all_launches = self._get_all_launches()
 
     def _get_endpoint(self, suffix):
         base_url = str(self.base_url)
@@ -119,6 +121,21 @@ class SeqeraApi:
             raise ValueError('Error in fetching workflow list.')
         return r.json()
 
+    def _get_all_launches(self):
+        if not self.all_runs:
+            return {}
+        launches = {}
+        for run in self.all_runs['workflows']:
+            run_id = run['workflow']['id']
+            endpoint = self._get_endpoint(f'/workflow/{run_id}/launch')
+            if self.workspace:
+                endpoint = f'{endpoint}?workspaceId={self.workspace}'
+            r = requests.get(endpoint, headers=self.auth_header)
+            if r.status_code != 200:
+                raise ValueError('Error in fetching workflow list.')
+            launches[run_id] = r.json()
+        return launches
+
     def _list_orgs(self):
         orgs = []
         if not self.all_orgs:
@@ -148,24 +165,51 @@ class SeqeraApi:
         if not self.all_workflows:
             return workflows
         for workflow in self.all_workflows['pipelines']:
-            workflows.append((workflow['pipelineId'], workflow['name']))
+            workflows.append((
+                workflow['pipelineId'],
+                workflow['repository'],
+                workflow['name'],
+            ))
         return workflows
 
     def print_workflows(self):
-        for id, name in self._list_workflows():
-            print(f'{name}:\t{id}')
+        for id, repo, name in self._list_workflows():
+            print(f'{name}:\t{repo}\t{id}')
 
     def _list_runs(self):
         runs = []
         if not self.all_runs:
             return runs
         for run in self.all_runs['workflows']:
-            runs.append((run['workflow']['id'], run['workflow']['runName']))
+            workflow = run['workflow']
+            runs.append((
+                workflow['id'],
+                workflow['launchId'],
+                workflow['projectName'],
+                workflow['runName'],
+            ))
         return runs
 
     def print_runs(self):
-        for id, name in self._list_runs():
-            print(f'{name}:\t{id}')
+        for id, launch_id, project_name, run_name in self._list_runs():
+            print(f'{run_name}:\t{project_name}\t{id}\t{launch_id}')
+
+    def _list_launches(self):
+        launches = []
+        if not self.all_launches:
+            return launches
+        for run_id, launch in self.all_launches.items():
+            launch_info = launch['launch']
+            launches.append((
+                launch_info['id'],
+                run_id,
+                launch_info['pipelineId']
+            ))
+        return launches
+
+    def print_launches(self):
+        for launch_id, run_id, pipeline_id in self._list_launches():
+            print(f'{run_id}:\t{launch_id}\t{pipeline_id}')
 
 
 def main(args):
@@ -182,6 +226,8 @@ def main(args):
             api.print_workflows()
         elif args.list_subcommand == 'runs':
             api.print_runs()
+        elif args.list_subcommand == 'launches':
+            api.print_launches()
 
 
 if __name__ == '__main__':
