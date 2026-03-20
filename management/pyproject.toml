@@ -1,0 +1,11 @@
+[project]
+name = "sih-seqera-platform-management"
+version = "0.1.0"
+description = "CLI to manage the SIH bioinformatics platform"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "pydantic>=2.12.5",
+    "requests>=2.32.5",
+    "textual>=8.1.1",
+]
