@@ -2,24 +2,25 @@
 import argparse
 from pathlib import Path
 from manage_seqera import SeqeraApi
+from samplesheet.app import MyApp
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Manage the SIH bioinformatics Seqera platform."
+        description='Manage the SIH bioinformatics Seqera platform.'
     )
     parser.add_argument('-t', '--token', help='Path to a file containing your bearer token.', type=str, default=(Path.home() / '.tower/token'))
     parser.add_argument('-o', '--org', help='Organisation ID or name', type=str, default='')
     parser.add_argument('-w', '--workspace', help='Workspace ID', type=str, default='')
     subparsers = parser.add_subparsers(dest='subcommand', help='Subcommand help.')
     list_parser = subparsers.add_parser('list', help='List objects on Seqera.')
-    list_subparsers = list_parser.add_subparsers(dest='list_subcommand', help="list subcommand help.")
+    list_subparsers = list_parser.add_subparsers(dest='list_subcommand', help='list subcommand help.')
     list_orgs = list_subparsers.add_parser('orgs', help='List available organisations.')
     list_workspaces = list_subparsers.add_parser('workspaces', help='List available workspaces.')
     list_workflows = list_subparsers.add_parser('workflows', help='List available workflows.')
     list_runs = list_subparsers.add_parser('runs', help='List all runs in the workspace.')
     list_datasets = list_subparsers.add_parser('datasets', help='List all available datasets.')
-    dataset_parser = subparsers.add_parser('dataset', help = 'Manage Seqera datasets.')
+    dataset_parser = subparsers.add_parser('dataset', help='Manage Seqera datasets.')
     dataset_subparsers = dataset_parser.add_subparsers(dest='dataset_subcommand', help='dataset subcommand help.')
     dataset_download = dataset_subparsers.add_parser('download', help='Download a dataset.')
     dataset_download.add_argument('-i', '--id', help='Dataset ID', type=str)
@@ -32,6 +33,9 @@ def parse_args():
     dataset_update.add_argument('-f', '--file', help='Path to file to upload', type=str, required=True)
     dataset_update.add_argument('-n', '--name', help='Dataset name', type=str)
     dataset_update.add_argument('-i', '--id', help='Dataset ID', type=str)
+    samplesheet_parser = subparsers.add_parser('samplesheet', help='Manage samplesheets.')
+    samplesheet_subparsers = samplesheet_parser.add_subparsers(dest='samplesheet_subcommand', help='samplesheet subcommand help.')
+    samplesheet_create = samplesheet_subparsers.add_parser('create', help='Create a new samplesheet.')
 
     args = parser.parse_args()
 
@@ -68,8 +72,12 @@ def main(args):
             api.datasets.create_new_dataset(args.file, args.name, args.description)
         elif args.dataset_subcommand == 'update':
             api.datasets.upload_dataset(args.file, args.id, args.name)
+    elif args.subcommand == 'samplesheet':
+        if args.samplesheet_subcommand == 'create':
+            app = MyApp()
+            app.run()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_args()
     main(args)
