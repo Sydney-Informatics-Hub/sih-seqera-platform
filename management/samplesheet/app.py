@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header
-from pydantic import BaseModel, ConfigDict, ValidationError, ValidationInfo, field_validator
 from .start import StartScreen
-from .template_screen import TemplateScreen
+from .select_pipeline import SelectPipeline
 
 
 class MyApp(App):
@@ -16,7 +15,7 @@ class MyApp(App):
 
     SCREENS = {
         'start': StartScreen,
-        'template_screen': TemplateScreen,
+        'select_pipeline': SelectPipeline,
     }
 
     def on_mount(self) -> None:

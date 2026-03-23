@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Static
+from textual.widgets import Footer, Header, Markdown, Button
+
+
+MARKDOWN = """\
+# SIH bioinformatics service samplesheet generator.
+
+Welcome to the samplesheet generator!
+
+This app will guide you through setting up a samplesheet for a pipeline.
+
+**Note** that this app requires that you have a valid
+[samplesheet schema JSON file](https://nextflow-io.github.io/nf-schema/latest/nextflow_schema/sample_sheet_schema_examples/)
+for your pipeline.
+
+All nf-core pipelines define an `assets/schema_input.json` file for this purpose.
+If you are configuring a custom pipeline, this app will first look for a similar schema file at the same location.
+If that file is not found, you can provide the path within the repository to a valid schema file.
+
+Alternatively, you may simply provide the path to a valid schema file on your local computer to use.
+"""
 
 
 class StartScreen(Screen):
-    """"An initial start screen for the app."""
+    """"SIH bioinformatics service samplesheet generator."""
 
     BINDINGS = [
         ('n', 'next_screen', 'Next'),
@@ -15,8 +34,14 @@ class StartScreen(Screen):
         """Create child widgets for the app."""
         yield Header()
         yield Footer()
-        yield Static("Welcome!")
+        yield Markdown(MARKDOWN)
+        yield Button(
+            label='Start!',
+            variant='default',
+            id='start_button',
+            action='next_screen'
+        )
 
     def action_next_screen(self) -> None:
         """Proceed to the next screen."""
-        self.parent.push_screen('template_screen')
+        self.parent.push_screen('select_pipeline')
