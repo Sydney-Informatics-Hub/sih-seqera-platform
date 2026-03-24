@@ -16,10 +16,8 @@ This app will guide you through setting up a samplesheet for a pipeline.
 for your pipeline.
 
 All nf-core pipelines define an `assets/schema_input.json` file for this purpose.
-If you are configuring a custom pipeline, this app will first look for a similar schema file at the same location.
-If that file is not found, you can provide the path within the repository to a valid schema file.
-
-Alternatively, you may simply provide the path to a valid schema file on your local computer to use.
+If you are configuring a custom pipeline, this app will look for a similar schema file at the same location in that pipeline.
+Alternatively, if you have a valid schema file with an alternate name, you can provide its path directly.
 """
 
 
@@ -44,4 +42,4 @@ class StartScreen(Screen):
 
     def action_next_screen(self) -> None:
         """Proceed to the next screen."""
-        self.parent.push_screen('select_pipeline')
+        self.app.push_screen('select_pipeline')

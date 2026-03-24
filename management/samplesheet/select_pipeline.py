@@ -8,6 +8,7 @@ from textual.events import Mount, ScreenResume
 from textual.validation import Validator, ValidationResult, Function
 from enum import Enum
 from pathlib import Path
+from re import match
 
 
 class ValidPipelineTypes(Enum):
@@ -52,6 +53,7 @@ class SelectPipeline(Screen):
     def __init__(self):
         super().__init__()
         self.errors = {}
+        self.no_input = True
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -71,6 +73,9 @@ class SelectPipeline(Screen):
                 '',
                 'scrnaseq',
                 id='nfcore_pipeline_input',
+                validators=[
+                    NfCorePipeline(),
+                ]
             )
         with Vertical(id='custom_pipeline_section'):
             # Custom pipeline selection
@@ -102,13 +107,29 @@ class SelectPipeline(Screen):
 
     def action_next_screen(self) -> None:
         """Proceed to the next screen."""
-        if not self.errors:
-            # self.parent.push_screen('')
-            pass
+        if not self.no_input and not self.errors:
+            pipeline_select_mode = self.query_one('#pipeline_select').value
+            self.app.PIPELINE_TYPE = ValidPipelineTypes[pipeline_select_mode]
+            self.app.PIPELINE_SCHEMA = None
+            self.app.PIPELINE_GITHUB = None
+            if pipeline_select_mode == ValidPipelineTypes.NFCORE.name:
+                nf_core_pipeline = self.query_one('#nfcore_pipeline_input').value
+                self.app.PIPELINE_GITHUB = f'nf-core/{nf_core_pipeline}'
+            elif pipeline_select_mode == ValidPipelineTypes.CUSTOM.name:
+                pipeline = self.query_one('#custom_pipeline_input').value
+                schema = Path(pipeline) / 'assets/schema_input.json'
+                if schema.is_file:
+                    self.app.PIPELINE_SCHEMA = schema
+                else:
+                    self.app.PIPELINE_GITHUB = pipeline
+            elif pipeline_select_mode == ValidPipelineTypes.JSON.name:
+                schema = Path(self.query_one('#schema_input').value)
+                self.app.PIPELINE_SCHEMA = schema
+            self.app.push_screen('template_screen')
 
     def action_previous_screen(self) -> None:
         """Move back to the previous screen."""
-        self.parent.pop_screen()
+        self.app.pop_screen()
 
     @on(Select.Changed, '#pipeline_select')
     @on(Mount)
@@ -133,6 +154,7 @@ class SelectPipeline(Screen):
 
     @on(Input.Changed)
     def show_invalid_reasons(self, event: Input.Changed) -> None:
+        self.no_input = False
         err_msg = self.query_one(Pretty)
         if not event.validation_result.is_valid:
             self.errors[event.input.id] = event.validation_result.failure_descriptions
@@ -146,14 +168,42 @@ class SelectPipeline(Screen):
             err_msg.update(None)
 
 
+class NfCorePipeline(Validator):
+
+    def validate(self, value: str) -> ValidationResult:
+        """Check that a string represents an nf-core pipeline name."""
+        if not isinstance(value, str):
+            return self.failure('Input must be a string.')
+        if not bool(value):
+            return self.failure('Input cannot be empty.')
+        if not match(r'^[\w\-\.]+$', value):
+            return self.failure(f'Invalid characters found in pipeline name: {value}')
+        return self.success()
+
+
+class CustomPipeline(Validator):
+
+    def validate(self, value: str) -> ValidationResult:
+        """Check that a string represents either a local pipeline path or a GitHub repo name."""
+        if not isinstance(value, str):
+            return self.failure('Input must be a string.')
+        if not bool(value):
+            return self.failure('Input cannot be empty.')
+        schema_exists = (Path(value) / 'assets/schema_input.json').is_file()
+        is_valid_github_name = match(r'^[\w\-\.]+/[\w-\]\.+$', value)
+        if not schema_exists and not is_valid_github_name:
+            return self.failure(f'Input is not an existing directory and is not a valid GitHub name: {value}')
+        return self.success()
+
+
 class SchemaJSONPath(Validator):
 
     def validate(self, value: str) -> ValidationResult:
         """Check that a string represents a real, existing path to a JSON file."""
         if not isinstance(value, str):
-            return self.failure('Invalid input.')
+            return self.failure('Input must be a string.')
         if not bool(value):
-            return self.failure('Invalid input.')
+            return self.failure('Input cannot be empty.')
         p = Path(value)
         if not p.is_file():
             return self.failure(f'File does not exist: {value}')

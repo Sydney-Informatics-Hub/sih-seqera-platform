@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header
+from pathlib import Path
 from .start import StartScreen
-from .select_pipeline import SelectPipeline
+from .select_pipeline import SelectPipeline, ValidPipelineTypes
+from .template_screen import TemplateScreen
 
 
 class MyApp(App):
     """"A Textual app."""
+
+    PIPELINE_TYPE: ValidPipelineTypes | None = None
+    PIPELINE_SCHEMA: Path | None = None
+    PIPELINE_GITHUB: str | None = None
 
     BINDINGS = [
         ('d', 'toggle_dark', 'Toggle dark mode'),
@@ -16,6 +22,7 @@ class MyApp(App):
     SCREENS = {
         'start': StartScreen,
         'select_pipeline': SelectPipeline,
+        'template_screen': TemplateScreen,
     }
 
     def on_mount(self) -> None:

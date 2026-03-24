@@ -25,4 +25,4 @@ class TemplateScreen(Screen):
         yield Select((p.value, p.name) for p in ValidOptions)
 
     def action_previous_screen(self) -> None:
-        self.parent.pop_screen()
+        self.app.pop_screen()
