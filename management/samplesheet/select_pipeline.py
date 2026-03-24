@@ -84,6 +84,9 @@ class SelectPipeline(Screen):
                 '',
                 'Sydney-Informatics-Hub/scrnavigator-nf OR /path/to/custom/pipeline',
                 id='custom_pipeline_input',
+                validators=[
+                    CustomPipeline(),
+                ]
             )
         with Vertical(id='schema_file_section'):
             # Schema selection
@@ -96,8 +99,8 @@ class SelectPipeline(Screen):
                     SchemaJSONPath(),
                 ]
             )
-        err_msg = Pretty(
-            None,
+        err_msg = Static(
+            '',
             id='error_messages',
             classes='error',
         )
@@ -135,6 +138,7 @@ class SelectPipeline(Screen):
     @on(Mount)
     @on(ScreenResume)
     def show_hide_inputs(self):
+        """Show or hide inputs based on selection."""
         pipeline_select_mode = self.query_one('#pipeline_select').value
         nfcore_section = self.query_one('#nfcore_pipeline_section')
         custom_section = self.query_one('#custom_pipeline_section')
@@ -153,17 +157,22 @@ class SelectPipeline(Screen):
             json_section.display = True
 
     @on(Input.Changed)
-    def show_invalid_reasons(self, event: Input.Changed) -> None:
+    def register_input(self, event: Input.Changed) -> None:
         self.no_input = False
-        err_msg = self.query_one(Pretty)
+
+    @on(Input.Changed)
+    @on(Input.Blurred)
+    def show_invalid_reasons(self, event: Input.Changed | Input.Blurred) -> None:
+        err_msg = self.query_one(Static)
         if not event.validation_result.is_valid:
             self.errors[event.input.id] = event.validation_result.failure_descriptions
             err_msg.visible = True
         else:
             self.errors.pop(event.input.id, None)
             err_msg.visible = False
-        if self.errors:
-            err_msg.update({'Errors': self.errors})
+        if self.errors[event.input.id]:
+            msg = 'Errors: ' + '; '.join(self.errors[event.input.id])
+            err_msg.update(msg)
         else:
             err_msg.update(None)
 
@@ -190,7 +199,7 @@ class CustomPipeline(Validator):
         if not bool(value):
             return self.failure('Input cannot be empty.')
         schema_exists = (Path(value) / 'assets/schema_input.json').is_file()
-        is_valid_github_name = match(r'^[\w\-\.]+/[\w-\]\.+$', value)
+        is_valid_github_name = match(r'^[\w\-\.]+/[\w\-\.]+$', value)
         if not schema_exists and not is_valid_github_name:
             return self.failure(f'Input is not an existing directory and is not a valid GitHub name: {value}')
         return self.success()
