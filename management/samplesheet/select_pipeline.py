@@ -42,6 +42,25 @@ MARKDOWN_4_SCHEMA_INPUT = """\
 """
 
 
+class PipelineState:
+
+    def __init__(self, type: ValidPipelineTypes | None = None, input: str | None = None) -> None:
+        self.type = type
+        self.input = input
+
+    def get_type(self) -> ValidPipelineTypes | None:
+        return self.type
+
+    def set_type(self, type: ValidPipelineTypes) -> None:
+        self.type = type
+
+    def get_input(self) -> str | None:
+        return self.input
+
+    def set_input(self, input: str) -> None:
+        self.input = input
+
+
 class SelectPipeline(Screen):
     """"Select a pipeline or schema file."""
 
@@ -53,7 +72,8 @@ class SelectPipeline(Screen):
     def __init__(self):
         super().__init__()
         self.errors = {}
-        self.no_input = True
+        # self.no_input = True
+        self.state: PipelineState = PipelineState()
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -74,7 +94,7 @@ class SelectPipeline(Screen):
                 'scrnaseq',
                 id='nfcore_pipeline_input',
                 validators=[
-                    NfCorePipeline(),
+                    NfCorePipeline(self.state),
                 ]
             )
         with Vertical(id='custom_pipeline_section'):
@@ -85,7 +105,7 @@ class SelectPipeline(Screen):
                 'Sydney-Informatics-Hub/scrnavigator-nf OR /path/to/custom/pipeline',
                 id='custom_pipeline_input',
                 validators=[
-                    CustomPipeline(),
+                    CustomPipeline(self.state),
                 ]
             )
         with Vertical(id='schema_file_section'):
@@ -96,39 +116,44 @@ class SelectPipeline(Screen):
                 'path/to/schema_input.json',
                 id='schema_input',
                 validators=[
-                    SchemaJSONPath(),
+                    SchemaJSONPath(self.state),
                 ]
             )
-        err_msg = Static(
+        yield Static(
             '',
             id='error_messages',
             classes='error',
         )
-        err_msg.visible = False
-        yield err_msg
-
 
     def action_next_screen(self) -> None:
         """Proceed to the next screen."""
-        if not self.no_input and not self.errors:
-            pipeline_select_mode = self.query_one('#pipeline_select').value
-            self.app.PIPELINE_TYPE = ValidPipelineTypes[pipeline_select_mode]
+        pipeline_select_mode = self.state.get_type()
+        if pipeline_select_mode == ValidPipelineTypes.NFCORE:
+            nf_core_pipeline = self.query_one('#nfcore_pipeline_input').value
+            if not nf_core_pipeline:
+                return None
+            self.app.PIPELINE_GITHUB = f'nf-core/{nf_core_pipeline}'
             self.app.PIPELINE_SCHEMA = None
-            self.app.PIPELINE_GITHUB = None
-            if pipeline_select_mode == ValidPipelineTypes.NFCORE.name:
-                nf_core_pipeline = self.query_one('#nfcore_pipeline_input').value
-                self.app.PIPELINE_GITHUB = f'nf-core/{nf_core_pipeline}'
-            elif pipeline_select_mode == ValidPipelineTypes.CUSTOM.name:
-                pipeline = self.query_one('#custom_pipeline_input').value
-                schema = Path(pipeline) / 'assets/schema_input.json'
-                if schema.is_file:
-                    self.app.PIPELINE_SCHEMA = schema
-                else:
-                    self.app.PIPELINE_GITHUB = pipeline
-            elif pipeline_select_mode == ValidPipelineTypes.JSON.name:
-                schema = Path(self.query_one('#schema_input').value)
+        elif pipeline_select_mode == ValidPipelineTypes.CUSTOM:
+            pipeline = self.query_one('#custom_pipeline_input').value
+            if not pipeline:
+                return None
+            schema = Path(pipeline) / 'assets/schema_input.json'
+            if schema.is_file:
                 self.app.PIPELINE_SCHEMA = schema
-            self.app.push_screen('template_screen')
+                self.app.PIPELINE_GITHUB = None
+            else:
+                self.app.PIPELINE_GITHUB = pipeline
+                self.app.PIPELINE_SCHEMA = None
+        elif pipeline_select_mode == ValidPipelineTypes.JSON:
+            schema = Path(self.query_one('#schema_input').value)
+            if not schema:
+                return None
+            self.app.PIPELINE_SCHEMA = schema
+        else:
+            return None
+        self.app.PIPELINE_TYPE = pipeline_select_mode
+        self.app.push_screen('template_screen')
 
     def action_previous_screen(self) -> None:
         """Move back to the previous screen."""
@@ -155,32 +180,52 @@ class SelectPipeline(Screen):
             nfcore_section.display = False
             custom_section.display = False
             json_section.display = True
-
-    @on(Input.Changed)
-    def register_input(self, event: Input.Changed) -> None:
-        self.no_input = False
+        self.state.set_type(ValidPipelineTypes[pipeline_select_mode])
 
     @on(Input.Changed)
     @on(Input.Blurred)
-    def show_invalid_reasons(self, event: Input.Changed | Input.Blurred) -> None:
-        err_msg = self.query_one(Static)
+    def get_invalid_reasons(self, event: Input.Changed | Input.Blurred) -> None:
+        err_msg = self.query_one('#error_messages')
         if not event.validation_result.is_valid:
             self.errors[event.input.id] = event.validation_result.failure_descriptions
-            err_msg.visible = True
         else:
             self.errors.pop(event.input.id, None)
-            err_msg.visible = False
-        if self.errors[event.input.id]:
-            msg = 'Errors: ' + '; '.join(self.errors[event.input.id])
+
+    @on(Select.Changed, '#pipeline_select')
+    @on(Mount)
+    @on(ScreenResume)
+    @on(Input.Changed)
+    @on(Input.Blurred)
+    def show_invalid_reasons(self) -> None:
+        pipeline_select_mode = self.query_one('#pipeline_select').value
+        err_msg = self.query_one('#error_messages')
+        text_input_id = None
+        if pipeline_select_mode == ValidPipelineTypes.NFCORE.name:
+            text_input_id = 'nfcore_pipeline_input'
+        elif pipeline_select_mode == ValidPipelineTypes.CUSTOM.name:
+            text_input_id = 'custom_pipeline_input'
+        elif pipeline_select_mode == ValidPipelineTypes.JSON.name:
+            text_input_id = 'schema_input'
+        if not text_input_id:
+            return None
+        errors = self.errors.get(text_input_id, None)
+        if errors:
+            msg = 'Errors: ' + '; '.join(errors)
             err_msg.update(msg)
         else:
-            err_msg.update(None)
+            err_msg.update('')
 
 
 class NfCorePipeline(Validator):
 
+    def __init__(self, state: PipelineState) -> None:
+        super().__init__()
+        self.state = state
+
     def validate(self, value: str) -> ValidationResult:
         """Check that a string represents an nf-core pipeline name."""
+        if self.state.get_type() != ValidPipelineTypes.NFCORE:
+            return self.success()
         if not isinstance(value, str):
             return self.failure('Input must be a string.')
         if not bool(value):
@@ -192,8 +237,14 @@ class NfCorePipeline(Validator):
 
 class CustomPipeline(Validator):
 
+    def __init__(self, state: PipelineState) -> None:
+        super().__init__()
+        self.state = state
+
     def validate(self, value: str) -> ValidationResult:
         """Check that a string represents either a local pipeline path or a GitHub repo name."""
+        if self.state.get_type() != ValidPipelineTypes.CUSTOM:
+            return self.success()
         if not isinstance(value, str):
             return self.failure('Input must be a string.')
         if not bool(value):
@@ -207,8 +258,14 @@ class CustomPipeline(Validator):
 
 class SchemaJSONPath(Validator):
 
+    def __init__(self, state: PipelineState) -> None:
+        super().__init__()
+        self.state = state
+
     def validate(self, value: str) -> ValidationResult:
         """Check that a string represents a real, existing path to a JSON file."""
+        if self.state.get_type() != ValidPipelineTypes.JSON:
+            return self.success()
         if not isinstance(value, str):
             return self.failure('Input must be a string.')
         if not bool(value):
