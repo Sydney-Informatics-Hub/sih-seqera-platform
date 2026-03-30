@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 from textual.app import ComposeResult
 from textual.screen import Screen
-from textual.widgets import Footer, Header, Markdown, Select, Input, Static, Pretty
+from textual.widgets import Footer, Header, Markdown, Select, Input, Static
 from textual.containers import Vertical
 from textual import on
 from textual.events import Mount, ScreenResume
-from textual.validation import Validator, ValidationResult, Function
+from textual.validation import Validator, ValidationResult
 from enum import Enum
 from pathlib import Path
 from re import match
+from .schema import NextflowSchema
 
 
 class ValidPipelineTypes(Enum):
